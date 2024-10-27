@@ -80,10 +80,11 @@ public class TerrainGenerator : MonoBehaviour
                 continue;
             }
 
+            const int SIDE_GENERATION_SPAN = 300;
             float sectionXSize = section.bounds.size.x;
             if (section.rightSection == null) {
                 Vector3 rightSideSection = sectionCenter - Vector3.right * sectionXSize;
-                if (Mathf.Abs(rightSideSection.x - player.position.x) < 600) {
+                if (Mathf.Abs(rightSideSection.x - player.position.x) < SIDE_GENERATION_SPAN) {
                     //Mathf.Abs(sectionCenter.x - player.position.x) + sectionXSize) {
 
                     var newInstance = PlaceNeighborSection(section, NeighborSide.Right);
@@ -93,7 +94,7 @@ public class TerrainGenerator : MonoBehaviour
             }
             if (section.leftSection == null) {
                 Vector3 leftSideSection = sectionCenter - Vector3.left * sectionXSize;
-                if (Mathf.Abs(leftSideSection.x - player.position.x) < 600) {
+                if (Mathf.Abs(leftSideSection.x - player.position.x) < SIDE_GENERATION_SPAN) {
                     //Mathf.Abs(sectionCenter.x - player.position.x) + sectionXSize) {
 
                     var newInstance = PlaceNeighborSection(section, NeighborSide.Left);

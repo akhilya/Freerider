@@ -1,7 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -21,11 +17,16 @@ public class PlayerController : MonoBehaviour
     public float jumpHeight = 10;
     [Space]
     public float camBendMaxAngle = 10;
-    public   ParticleSystem leftSkiSlideParticle, rightSkiSlideParticle;
+    public ParticleSystem leftSkiSlideParticle, rightSkiSlideParticle;
     public ParticleSystem speedParticle;
+
+    public bool IsGrounded => isGrounded;
+    public bool IsHighGrounded => isHighGrounded;
+    public bool IsMoving => isMoving;
 
     private bool isMoving = false;
     private bool isGrounded = false;
+    private bool isHighGrounded = false;
     private Vector3 camInitialLocalPos;
     private float camZRot = 0.0f;
     private float camZBend = 0.0f;
@@ -54,14 +55,16 @@ public class PlayerController : MonoBehaviour
     {
         float deltaTime = Time.deltaTime;
 
-        mouseX += Input.GetAxis("Mouse X") * sensivity;
-        mouseY += Input.GetAxis("Mouse Y") * sensivity;
-
-        mouseY = Mathf.Clamp(mouseY, -80f, 80f);
+        //mouseX += Input.GetAxis("Mouse X") * sensivity;
+        //mouseY += Input.GetAxis("Mouse Y") * sensivity;
+        //mouseY = Mathf.Clamp(mouseY, -80f, 80f);
+        mouseY = -20.0f;
+        mouseX = Input.GetAxis("Horizontal") * 10.0f;
 
         groundCheckSpherePos = transform.position + Vector3.up * groundCheckSphereYOffset;
         bool wasGrounded = isGrounded;
         isGrounded = Physics.CheckSphere(groundCheckSpherePos, 1f, groundMask);
+        isHighGrounded = Physics.CheckSphere(groundCheckSpherePos, 2.5f, groundMask);
 
         if (isGrounded && wasGrounded != isGrounded)
             cameraFallShakeOffset = Vector3.down * 0.75f;
@@ -71,7 +74,7 @@ public class PlayerController : MonoBehaviour
             Vector3 camLocalPos = camera.transform.localPosition;
             float time = Time.timeSinceLevelLoad * speed * 3.5f;
             camLocalPos.y = camInitialLocalPos.y + Mathf.Sin(time) * 0.05f;
-            camZRot = camInitialLocalPos.z + Mathf.Cos(time / 2.0f) * 1.5f;
+            camZRot = camInitialLocalPos.z + Mathf.Cos(time / 2.0f) * 3.0f;
             camera.transform.localPosition = camLocalPos + cameraFallShakeOffset;
         }
         else {
@@ -96,9 +99,11 @@ public class PlayerController : MonoBehaviour
         bodyRightDir = localRotation * normalRight;
         skies.rotation = Quaternion.Slerp(skies.rotation, Quaternion.LookRotation(bodyRightDir, bodyUpDir), deltaTime * 4.0f);
 
+#if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.Space)) {
             rigidbody.AddForce(Vector3.up * jumpHeight, ForceMode.Impulse);
         }
+#endif
 
         float velocity = rigidbody.velocity.magnitude;
         float velocityShrink = deltaTime / 5.0f;
@@ -168,10 +173,20 @@ public class PlayerController : MonoBehaviour
         Vector3 right = Vector3.Cross(forward, Vector3.down);
         Vector3 inputDirection = Vector3.zero;
 
-        horizontalInputAxis = Input.GetAxisRaw("Horizontal");
+#if UNITY_ANDROID || UNITY_IPHONE || UNITY_EDITOR
+        if (Input.touchCount > 0) {
+            Touch touch = Input.GetTouch(0);
+            if (touch.position.x < Screen.width / 2)
+                horizontalInputAxis = -1;
+            else
+                horizontalInputAxis = 1;
+        }
+        else 
+            horizontalInputAxis = Input.GetAxisRaw("Horizontal");
+#endif
         float groundControl = isGrounded ? 8f : 1.0f;
         inputDirection += right * horizontalInputAxis * groundControl;
-        inputDirection += forward * Input.GetAxisRaw("Vertical");
+        inputDirection += forward; // * Input.GetAxisRaw("Vertical");
         if (isGrounded && horizontalInputAxis != 0)
             inputDirection += Vector3.back * 0.1f;
 
